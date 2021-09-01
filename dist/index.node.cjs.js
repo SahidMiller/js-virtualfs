@@ -18,6 +18,7 @@ var _Object$freeze = _interopDefault(require('babel-runtime/core-js/object/freez
 var _Map = _interopDefault(require('babel-runtime/core-js/map'));
 var Counter = _interopDefault(require('resource-counter'));
 var _WeakMap = _interopDefault(require('babel-runtime/core-js/weak-map'));
+var EventEmitter = _interopDefault(require('events'));
 var errno = require('errno');
 var stream = require('stream');
 var randomBytes = _interopDefault(require('secure-random-bytes'));
@@ -374,13 +375,14 @@ function unmkDev(dev) {
 /**
  * Class representing an iNode.
  */
-class INode {
+class INode extends EventEmitter {
 
   /**
    * Creates iNode.
    * INode and INodeManager will recursively call each other.
    */
   constructor(metadata, iNodeMgr) {
+    super();
     const now = new Date();
     this._metadata = new Stat(_extends({}, metadata, {
       mode: metadata.mode,
@@ -455,6 +457,7 @@ class File extends INode {
       bytesWritten = buffer$$1.copy(data, position);
     }
     this._data = data;
+    this.emit("change");
     return bytesWritten;
   }
 
@@ -539,9 +542,21 @@ class Directory extends INode {
     const now = new Date();
     this._metadata.mtime = now;
     this._metadata.ctime = now;
-    this._iNodeMgr.linkINode(this._iNodeMgr.getINode(index));
+
+    const childNode = this._iNodeMgr.getINode(index);
+    this._iNodeMgr.linkINode(childNode);
     this._dir.set(name, index);
+
+    this.emit("child:add", name, index);
+    childNode.on("change", this.onChildChange.bind(this));
+    childNode.on("child:add", this.onChildChange.bind(this));
+    childNode.on("child:delete", this.onChildChange.bind(this));
+
     return;
+  }
+
+  onChildChange() {
+    this.emit("change");
   }
 
   /**
@@ -559,7 +574,12 @@ class Directory extends INode {
       this._metadata.mtime = now;
       this._metadata.ctime = now;
       this._dir.delete(name);
-      this._iNodeMgr.unlinkINode(this._iNodeMgr.getINode(index));
+
+      const childNode = this._iNodeMgr.getINode(index);
+      this._iNodeMgr.unlinkINode(childNode);
+
+      this.emit("child:delete", name, index);
+      childNode.removeAllListeners();
     }
     return;
   }
@@ -578,6 +598,7 @@ class Directory extends INode {
       this._metadata.ctime = now;
       this._dir.delete(oldName);
       this._dir.set(newName, index);
+      this.emit("change", "rename");
     }
     return;
   }
