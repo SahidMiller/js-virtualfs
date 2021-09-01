@@ -1,6 +1,7 @@
 import _Set from 'babel-runtime/core-js/set';
 import _Array$from from 'babel-runtime/core-js/array/from';
 import _extends from 'babel-runtime/helpers/extends';
+import _Number$isNaN from 'babel-runtime/core-js/number/is-nan';
 import _slicedToArray from 'babel-runtime/helpers/slicedToArray';
 import { Buffer as Buffer$1 } from 'buffer';
 import process, { nextTick } from 'process';
@@ -1539,12 +1540,13 @@ class VirtualFS {
   }
 
   chmodSync(path, mode) {
+    mode = Number(mode);
     path = this._getPath(path);
     const target = this._navigate(path, true).target;
     if (!target) {
       throw new VirtualFSError(code.ENOENT, path);
     }
-    if (typeof mode !== 'number') {
+    if (_Number$isNaN(mode)) {
       throw new TypeError('mode must be an integer');
     }
     const targetMetadata = target.getMetadata();
@@ -1814,11 +1816,12 @@ class VirtualFS {
   }
 
   fchmodSync(fdIndex, mode) {
+    mode = Number(mode);
     const fd = this._fdMgr.getFd(fdIndex);
     if (!fd) {
       throw new VirtualFSError(code.EBADF, null, null, 'fchmod');
     }
-    if (typeof mode !== 'number') {
+    if (_Number$isNaN(mode)) {
       throw new TypeError('mode must be an integer');
     }
     const fdMetadata = fd.getINode().getMetadata();
@@ -1992,12 +1995,13 @@ class VirtualFS {
   }
 
   lchmodSync(path, mode) {
+    mode = Number(mode);
     path = this._getPath(path);
     const target = this._navigate(path, false).target;
     if (!target) {
       throw new VirtualFSError(code.ENOENT, path);
     }
-    if (typeof mode !== 'number') {
+    if (_Number$isNaN(mode)) {
       throw new TypeError('mode must be an integer');
     }
     const targetMetadata = target.getMetadata();
@@ -2124,7 +2128,16 @@ class VirtualFS {
     return;
   }
 
-  mkdirSync(path, mode = DEFAULT_DIRECTORY_PERM) {
+  mkdirSync(path, options) {
+    options = typeof options === 'object' ? options : {
+      recursive: false,
+      mode: options
+    };
+
+    if (options.recursive) {
+      return this.mkdirpSync(path, options.mode);
+    }
+
     path = this._getPath(path);
     // we expect a non-existent directory
     path = path.replace(/(.+?)\/+$/, '$1');
@@ -2142,7 +2155,7 @@ class VirtualFS {
       }
 
       var _iNodeMgr$createINode3 = this._iNodeMgr.createINode(Directory, {
-        mode: applyUmask(mode, this._umask),
+        mode: applyUmask(options.mode, this._umask),
         uid: this._uid,
         gid: this._gid,
         parent: navigated.dir.getEntryIndex('.')
