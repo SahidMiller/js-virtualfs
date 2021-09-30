@@ -1133,13 +1133,19 @@ class ReadStream extends stream.Readable {
    * It will asynchronously open the file descriptor if a file path was passed in.
    * It will automatically close the opened file descriptor by default.
    */
-  constructor(path, options, fs) {
+  constructor(path, options = {}, fs) {
     super({
       highWaterMark: options.highWaterMark,
       encoding: options.encoding
     });
     this._fs = fs;
     this.bytesRead = 0;
+
+    if (typeof path === 'number') {
+      options.fd = path;
+      path = undefined;
+    }
+
     this.path = path;
     this.fd = options.fd === undefined ? null : options.fd;
     this.flags = options.flags === undefined ? 'r' : options.flags;
@@ -1269,12 +1275,18 @@ class WriteStream extends stream.Writable {
   /**
    * Creates WriteStream.
    */
-  constructor(path, options, fs) {
+  constructor(path, options = {}, fs) {
     super({
       highWaterMark: options.highWaterMark
     });
     this._fs = fs;
     this.bytesWritten = 0;
+
+    if (typeof path === 'number') {
+      options.fd = path;
+      path = undefined;
+    }
+
     this.path = path;
     this.fd = options.fd === undefined ? null : options.fd;
     this.flags = options.flags === undefined ? 'w' : options.flags;
@@ -2158,7 +2170,7 @@ class VirtualFS {
 
   mkdirSync(path, options) {
     options = typeof options === 'object' ? options : {
-      recursive: false,
+      recursive: true,
       mode: options
     };
 

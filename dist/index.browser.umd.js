@@ -12774,7 +12774,10 @@ var ReadStream = function (_Readable) {
    * It will asynchronously open the file descriptor if a file path was passed in.
    * It will automatically close the opened file descriptor by default.
    */
-  function ReadStream(path, options, fs) {
+  function ReadStream(path) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var fs = arguments[2];
+
     _classCallCheck(this, ReadStream);
 
     var _this = _possibleConstructorReturn(this, (ReadStream.__proto__ || _Object$getPrototypeOf(ReadStream)).call(this, {
@@ -12784,6 +12787,12 @@ var ReadStream = function (_Readable) {
 
     _this._fs = fs;
     _this.bytesRead = 0;
+
+    if (typeof path === 'number') {
+      options.fd = path;
+      path = undefined;
+    }
+
     _this.path = path;
     _this.fd = options.fd === undefined ? null : options.fd;
     _this.flags = options.flags === undefined ? 'r' : options.flags;
@@ -12940,7 +12949,10 @@ var WriteStream = function (_Writable) {
   /**
    * Creates WriteStream.
    */
-  function WriteStream(path, options, fs) {
+  function WriteStream(path) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var fs = arguments[2];
+
     _classCallCheck(this, WriteStream);
 
     var _this5 = _possibleConstructorReturn(this, (WriteStream.__proto__ || _Object$getPrototypeOf(WriteStream)).call(this, {
@@ -12949,6 +12961,12 @@ var WriteStream = function (_Writable) {
 
     _this5._fs = fs;
     _this5.bytesWritten = 0;
+
+    if (typeof path === 'number') {
+      options.fd = path;
+      path = undefined;
+    }
+
     _this5.path = path;
     _this5.fd = options.fd === undefined ? null : options.fd;
     _this5.flags = options.flags === undefined ? 'w' : options.flags;
@@ -14023,7 +14041,7 @@ var VirtualFS = function () {
     key: 'mkdirSync',
     value: function mkdirSync(path, options) {
       options = (typeof options === 'undefined' ? 'undefined' : _typeof(options)) === 'object' ? options : {
-        recursive: false,
+        recursive: true,
         mode: options
       };
 

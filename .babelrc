@@ -1,11 +1,6 @@
 {
   "presets": [
-    "flow",
-    ["env", {
-      "targets": {
-        "node": "current"
-      }
-    }]
+    "@babel/preset-flow"
   ],
-  "plugins": ["transform-object-rest-spread", "transform-runtime"]
+  "plugins": ["@babel/plugin-syntax-object-rest-spread"]
 }
